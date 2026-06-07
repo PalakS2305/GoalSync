@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoalSync — Employee Dashboard</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body class="dashboard-body">
+
+  <nav class="navbar">
+    <h2>🎯 GoalSync</h2>
+    <div class="navbar-right">
+      <span id="navUserName">Loading...</span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-content">
+
+    <div class="welcome-card">
+      <h1>
+        Welcome, <span id="userName">...</span>!
+        <span class="role-badge badge-employee">Employee</span>
+      </h1>
+      <p>Manage your goals, track progress, and log quarterly achievements.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="number">0</div>
+        <div class="label">Goals Created</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">0%</div>
+        <div class="label">Total Weightage</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">—</div>
+        <div class="label">Approval Status</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    // Protect this page — only employees allowed
+    const user = requireAuth('employee');
+
+    if (user) {
+      document.getElementById('userName').textContent    = user.name;
+      document.getElementById('navUserName').textContent = user.name;
+    }
+  </script>
+
+</body>
+</html>
