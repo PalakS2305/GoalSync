@@ -73,11 +73,13 @@ function hideError() {
   document.getElementById("errorBox").classList.remove("show");
 }
 
-// ── Allow Enter key to submit ──
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("password").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleLogin();
-  });
+  const passwordField = document.getElementById("password");
+  if (passwordField) {
+    passwordField.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleLogin();
+    });
+  }
 });
 
 // ── Logout ──
