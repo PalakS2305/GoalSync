@@ -27,19 +27,20 @@
     </div>
 
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="number">0</div>
-        <div class="label">Pending Approvals</div>
-      </div>
-      <div class="stat-card">
-        <div class="number">0</div>
-        <div class="label">Team Members</div>
-      </div>
-      <div class="stat-card">
-        <div class="number">0</div>
-        <div class="label">Goals Approved</div>
-      </div>
-    </div>
+  <div class="stat-card" style="cursor:pointer"
+       onclick="window.location.href='manager-team.html'">
+    <div class="number">👥</div>
+    <div class="label">Review Team Goals</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="pendingCount">—</div>
+    <div class="label">Pending Approvals</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="approvedCount">—</div>
+    <div class="label">Goals Approved</div>
+  </div>
+</div>
 
   </div>
 

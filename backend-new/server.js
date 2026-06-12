@@ -4,7 +4,10 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
 const goalRoutes = require("./routes/goalRoutes");
-
+const managerRoutes = require("./routes/managerRoutes");
+//const managerRoutes = require("./routes/managerRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const quarterlyRoutes = require("./routes/quarterlyRoutes");
 const app = express();
 
 app.use(cors());
@@ -12,6 +15,9 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/goals", goalRoutes);
+app.use("/api/manager", managerRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/quarterly", quarterlyRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "GoalSync API is running ✅" });
