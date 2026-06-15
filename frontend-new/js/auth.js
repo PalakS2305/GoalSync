@@ -1,5 +1,9 @@
-// Backend URL — change this when you deploy
-const API_URL = "http://localhost:5000";
+// Backend URL — auto switches based on environment
+const API_URL =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5000"
+    : "https://goalsync-backend-omlr.onrender.com";
 
 // ── Login Handler ──
 async function handleLogin() {
@@ -7,16 +11,13 @@ async function handleLogin() {
   const password = document.getElementById("password").value.trim();
   const loginBtn = document.getElementById("loginBtn");
 
-  // Clear previous errors
   hideError();
 
-  // Basic validation
   if (!email || !password) {
     showError("Please enter both email and password.");
     return;
   }
 
-  // Show loading state
   loginBtn.textContent = "Logging in...";
   loginBtn.disabled = true;
 
@@ -30,16 +31,13 @@ async function handleLogin() {
     const data = await response.json();
 
     if (!response.ok) {
-      // Server returned an error (401, 400 etc.)
       showError(data.error || "Login failed. Please try again.");
       return;
     }
 
-    // Save token and user info to localStorage
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    // Redirect based on role
     const role = data.user.role;
 
     if (role === "employee") {
@@ -52,10 +50,8 @@ async function handleLogin() {
       showError("Unknown role. Contact administrator.");
     }
   } catch (err) {
-    // Network error — backend not running etc.
     showError("Cannot connect to server. Make sure backend is running.");
   } finally {
-    // Always re-enable button
     loginBtn.textContent = "Login";
     loginBtn.disabled = false;
   }
@@ -73,6 +69,7 @@ function hideError() {
   document.getElementById("errorBox").classList.remove("show");
 }
 
+// ── Enter key to login ──
 document.addEventListener("DOMContentLoaded", () => {
   const passwordField = document.getElementById("password");
   if (passwordField) {
@@ -96,7 +93,6 @@ function getUser() {
 }
 
 // ── Protect dashboard pages ──
-// Call this at top of every dashboard page
 function requireAuth(expectedRole) {
   const token = localStorage.getItem("token");
   const user = getUser();
@@ -113,4 +109,42 @@ function requireAuth(expectedRole) {
   }
 
   return user;
+}
+
+// ── Toast Notification System ──
+function showToast(message, type = "success", duration = 3000) {
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  const icons = {
+    success: "✅",
+    error: "❌",
+    warning: "⚠️",
+    info: "ℹ️",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span>${icons[type] || "•"}</span>
+    <span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = "slideOut 0.3s ease forwards";
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ── Loading State Helper ──
+function setLoading(buttonId, isLoading, originalText) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? "Loading..." : originalText;
 }

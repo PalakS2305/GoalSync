@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: goalsync_db
+    environment:
+      POSTGRES_USER: goalsync
+      POSTGRES_PASSWORD: goalsync123
+      POSTGRES_DB: goalsync
+    ports:
+      - "5432:5432"
+    volumes:
+      - goalsync_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: goalsync_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  goalsync_postgres_data:

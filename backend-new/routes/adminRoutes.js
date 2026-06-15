@@ -9,6 +9,7 @@ const {
   pushSharedGoal,
   getAllGoals,
   exportCSV,
+  getAnalytics,
 } = require("../controllers/adminController");
 const { authenticate, authorizeRoles } = require("../middleware/auth");
 
@@ -23,5 +24,6 @@ router.put("/goals/:goalId/unlock", unlockGoal);
 router.post("/shared-goals", pushSharedGoal);
 router.get("/goals", getAllGoals);
 router.get("/export-csv", exportCSV);
+router.get("/analytics", getAnalytics);
 
 module.exports = router;

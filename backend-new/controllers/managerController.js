@@ -1,11 +1,14 @@
 const pool = require("../db/index");
+const {
+  sendGoalsApprovedEmail,
+  sendGoalsReturnedEmail,
+} = require("../utils/emailService");
 
 // ── Get all team members and their goal status ──
 const getTeamOverview = async (req, res) => {
   const manager_id = req.user.id;
 
   try {
-    // Get all employees under this manager
     const employeesResult = await pool.query(
       `SELECT id, name, email, department 
        FROM users 
@@ -14,7 +17,6 @@ const getTeamOverview = async (req, res) => {
       [manager_id],
     );
 
-    // For each employee get their goal summary
     const teamData = await Promise.all(
       employeesResult.rows.map(async (emp) => {
         const goalsResult = await pool.query(
@@ -29,11 +31,7 @@ const getTeamOverview = async (req, res) => {
            WHERE employee_id = $1`,
           [emp.id],
         );
-
-        return {
-          ...emp,
-          goal_summary: goalsResult.rows[0],
-        };
+        return { ...emp, goal_summary: goalsResult.rows[0] };
       }),
     );
 
@@ -44,13 +42,12 @@ const getTeamOverview = async (req, res) => {
   }
 };
 
-// ── Get all submitted goals for a specific employee ──
+// ── Get all goals for a specific employee ──
 const getEmployeeGoals = async (req, res) => {
   const manager_id = req.user.id;
   const employee_id = req.params.employeeId;
 
   try {
-    // Verify this employee actually reports to this manager
     const empCheck = await pool.query(
       `SELECT id, name, email, department 
        FROM users 
@@ -64,7 +61,6 @@ const getEmployeeGoals = async (req, res) => {
       });
     }
 
-    // Get all goals for this employee
     const goalsResult = await pool.query(
       `SELECT * FROM goals 
        WHERE employee_id = $1
@@ -94,9 +90,8 @@ const approveGoals = async (req, res) => {
   const employee_id = req.params.employeeId;
 
   try {
-    // Verify employee is in this manager's team
     const empCheck = await pool.query(
-      `SELECT id, name FROM users 
+      `SELECT id, name, email FROM users 
        WHERE id = $1 AND manager_id = $2`,
       [employee_id, manager_id],
     );
@@ -107,7 +102,6 @@ const approveGoals = async (req, res) => {
       });
     }
 
-    // Check there are submitted goals
     const submittedCheck = await pool.query(
       `SELECT COUNT(*) FROM goals 
        WHERE employee_id = $1 AND status = 'submitted'`,
@@ -120,17 +114,15 @@ const approveGoals = async (req, res) => {
       });
     }
 
-    // Approve all submitted goals
     await pool.query(
       `UPDATE goals 
-       SET status = 'approved', 
+       SET status = 'approved',
            approved_at = NOW(),
            manager_comment = NULL
        WHERE employee_id = $1 AND status = 'submitted'`,
       [employee_id],
     );
 
-    // Audit log
     await pool.query(
       `INSERT INTO audit_logs 
         (user_id, user_name, user_role, action, table_name, description)
@@ -141,10 +133,20 @@ const approveGoals = async (req, res) => {
         req.user.role,
         "APPROVE_GOALS",
         "goals",
-        `Manager approved goals for employee id: ${employee_id} 
-        (${empCheck.rows[0].name})`,
+        `Manager approved goals for ${empCheck.rows[0].name}`,
       ],
     );
+
+    // Send email
+    try {
+      await sendGoalsApprovedEmail(
+        empCheck.rows[0].email,
+        empCheck.rows[0].name,
+        req.user.name,
+      );
+    } catch (emailErr) {
+      console.error("Email failed:", emailErr.message);
+    }
 
     res.status(200).json({
       message: `Goals approved for ${empCheck.rows[0].name}.`,
@@ -168,9 +170,8 @@ const returnGoals = async (req, res) => {
   }
 
   try {
-    // Verify employee is in this manager's team
     const empCheck = await pool.query(
-      `SELECT id, name FROM users 
+      `SELECT id, name, email FROM users 
        WHERE id = $1 AND manager_id = $2`,
       [employee_id, manager_id],
     );
@@ -181,7 +182,6 @@ const returnGoals = async (req, res) => {
       });
     }
 
-    // Return all submitted goals with comment
     await pool.query(
       `UPDATE goals 
        SET status = 'returned',
@@ -190,7 +190,6 @@ const returnGoals = async (req, res) => {
       [comment.trim(), employee_id],
     );
 
-    // Audit log
     await pool.query(
       `INSERT INTO audit_logs 
         (user_id, user_name, user_role, action, table_name, description)
@@ -201,10 +200,21 @@ const returnGoals = async (req, res) => {
         req.user.role,
         "RETURN_GOALS",
         "goals",
-        `Manager returned goals for ${empCheck.rows[0].name}. 
-        Comment: ${comment}`,
+        `Manager returned goals for ${empCheck.rows[0].name}. Comment: ${comment}`,
       ],
     );
+
+    // Send email
+    try {
+      await sendGoalsReturnedEmail(
+        empCheck.rows[0].email,
+        empCheck.rows[0].name,
+        req.user.name,
+        comment,
+      );
+    } catch (emailErr) {
+      console.error("Email failed:", emailErr.message);
+    }
 
     res.status(200).json({
       message: `Goals returned to ${empCheck.rows[0].name} with comment.`,

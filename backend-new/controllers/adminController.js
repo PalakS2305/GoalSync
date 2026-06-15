@@ -382,7 +382,64 @@ const exportCSV = async (req, res) => {
     res.status(500).json({ error: 'Server error generating CSV.' });
   }
 };
+// ── Analytics Data ──
+const getAnalytics = async (req, res) => {
+  try {
+    // Total users by role
+    const usersStats = await pool.query(
+      `SELECT role, COUNT(*) as count 
+       FROM users GROUP BY role`
+    );
 
+    // Goals by status
+    const goalStats = await pool.query(
+      `SELECT status, COUNT(*) as count 
+       FROM goals GROUP BY status`
+    );
+
+    // Goals by thrust area
+    const thrustStats = await pool.query(
+      `SELECT thrust_area, COUNT(*) as count 
+       FROM goals 
+       GROUP BY thrust_area 
+       ORDER BY count DESC`
+    );
+
+    // Average scores by quarter
+    const scoreStats = await pool.query(
+      `SELECT quarter, 
+              ROUND(AVG(score)::numeric, 1) as avg_score,
+              COUNT(*) as total_entries
+       FROM quarterly_achievements
+       WHERE score IS NOT NULL
+       GROUP BY quarter
+       ORDER BY quarter`
+    );
+
+    // Completion rate
+    const completionStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_goals,
+         COUNT(CASE WHEN status = 'approved' 
+                    OR status = 'locked' THEN 1 END) as approved,
+         COUNT(CASE WHEN status = 'submitted' THEN 1 END) as pending,
+         COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft
+       FROM goals`
+    );
+
+    res.status(200).json({
+      users:      usersStats.rows,
+      goals:      goalStats.rows,
+      thrust:     thrustStats.rows,
+      scores:     scoreStats.rows,
+      completion: completionStats.rows[0]
+    });
+
+  } catch (err) {
+    console.error('Analytics error:', err.message);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
 module.exports = {
   getAllUsers,
   createUser,
@@ -392,4 +449,5 @@ module.exports = {
   pushSharedGoal,
   getAllGoals,
   exportCSV,
+  getAnalytics,
 };
